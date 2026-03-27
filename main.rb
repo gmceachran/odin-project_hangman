@@ -1,4 +1,2 @@
-require_relative 'lib/game'
-game = Game.new
-puts game.secret_word
-game.play
+require_relative 'lib/menu'
+Menu.new.start_game

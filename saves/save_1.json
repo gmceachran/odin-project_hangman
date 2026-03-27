@@ -1,0 +1,6 @@
+{
+  "secret_word": "habits",
+  "revealed_word": ["h", "_", "_", "_", "_", "s"],
+  "incorrect_guesses": ["e", "o", "l"],
+  "lives": 3
+}
