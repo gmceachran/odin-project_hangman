@@ -2,25 +2,22 @@ require_relative 'player'
 
 class Game
   include UserIO
-  attr_reader :secret_word
+  attr_reader :secret_word, :lives, :incorrect_guesses
 
   def initialize 
     @secret_word = File.readlines(File.join(__dir__, '..', 'data', 'google-10000-english-no-swears.txt')).map { |s| s.chomp }.select { |s| s.length >= 5 && s.length <= 12 }.sample
     @secret_arr = secret_word_to_arr
     @revealed_word = @secret_arr.map { '_' }
-    @incorrect_guesses = 0
+    @lives = 6
+    @incorrect_guesses = []
   end
 
   def play
-    until @incorrect_guesses == 6 || revealed_word == @secret_word
+    # instructions
+    until @lives == 0 || revealed_word == @secret_word
       player_turn
     end
-
-    if @revealed_word == @secret_word
-      win
-    else
-      lose
-    end
+    revealed_word == @secret_word ? win : lose
   end
 
   private
@@ -30,6 +27,17 @@ class Game
   end
 
   def evaluate(guess)
+    if guess.length > 1
+      if guess == @secret_word
+        puts "#{guess} is correct!"
+        @revealed_word = guess.split('')
+        return
+      else
+        puts "#{guess} is incorrect."
+        @lives -= 1
+        return
+      end
+    end
     if @secret_arr.include?(guess)
       puts "#{guess} is correct!"
       @secret_arr.each_with_index do |letter, idx|
@@ -37,22 +45,31 @@ class Game
       end
     else
       puts "#{guess} is incorrect."
+      @incorrect_guesses << guess
+      @lives -= 1
     end
   end
 
   def win
+    render_board
+    puts "You win!"
   end
 
   def lose
+    render_board
+    puts "You lose! The word was #{@secret_word}."
   end
 
   def player_turn
-    render_board(revealed_word)
+    render_board
     guess = input_guess
-    evaluate(guess)
+    if guess == 'save'
+      # triger save game
+    else 
+      evaluate(guess)
+    end
   end
 
-  # consider just making word to arr, and have it take argument
   def secret_word_to_arr
     @secret_word.split('')
   end
