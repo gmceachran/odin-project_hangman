@@ -11,11 +11,11 @@ class Game
                                           .select { |s| s.length >= 5 && s
                                           .length <= 12 }
                                           .sample
-    @secret_arr = secret_word_to_arr
-    @revealed_word = state[:revealed_word] || @secret_arr.map { '_' }
+    @revealed_word = state[:revealed_word] || secret_arr.map { '_' }
     @lives = state[:lives] || 6
     @incorrect_guesses = state[:incorrect_guesses] || []
     @save_slots = state[:slots] || Array.new(3, 'empty')
+    @loaded_from_slot = state[:loaded_from_slot]
   end
 
   def play
@@ -45,9 +45,9 @@ class Game
       end
     end
 
-    if @secret_arr.include?(guess)
+    if secret_arr.include?(guess)
       puts "#{guess} is correct!"
-      @secret_arr.each_with_index do |letter, idx|
+      secret_arr.each_with_index do |letter, idx|
         @revealed_word[idx] = guess if letter == guess 
       end
     else
@@ -58,11 +58,13 @@ class Game
   end
 
   def win
+    clear_loaded_save_if_any
     render_board
     puts "You win!"
   end
 
   def lose
+    clear_loaded_save_if_any
     render_board
     puts "You lose! The word was #{@secret_word}."
   end
@@ -77,22 +79,51 @@ class Game
     end
   end
 
-  def secret_word_to_arr
+  def secret_arr
     @secret_word.split('')
+  end
+
+  def clear_loaded_save_if_any
+    return unless @loaded_from_slot
+
+    path = File.join(__dir__, '..', 'saves', "save_#{@loaded_from_slot}.json")
+    File.write(path, '')
+  end
+  
+  def save_and_exit(slot_number)
+    game_state = {
+      "secret_word": @secret_word,
+      "revealed_word": @revealed_word,
+      "incorrect_guesses": @incorrect_guesses,
+      "lives": @lives
+    }
+
+    File.write(File.join(__dir__, '..', 'saves', "save_#{slot_number}.json"), JSON.generate(game_state))
+    exit
   end
 
   def save_game
     slot_number = nil
     catch(:empty_slot) do 
-
       @save_slots.each_with_index do |slot, idx|
         slot_number = idx + 1
         throw :empty_slot if slot == 'empty'
       end
       # call function to that overrides save slot with a warning
-    end
-    # save to "save_#{slot_number}.json"
+      clear
+      render_menu(@save_slots)
+      slot_number = slot_warning
 
-    exit
+      if slot_number == 'exit'
+        exit
+      elsif slot_number == 'con'
+        return
+      else 
+        save_and_exit(slot_number)
+      end
+
+    end
+
+    save_and_exit(slot_number)
   end
 end

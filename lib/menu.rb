@@ -7,8 +7,15 @@ class Menu
 
   def initialize
     @save_slots = 3.times.map do |i|
-      file = File.read(File.join(__dir__, '..', 'saves', "save_#{i + 1}.json"))
-      file.empty? ? 'empty' : JSON.parse(file)
+      path = File.join(__dir__, '..', 'saves', "save_#{i + 1}.json")
+      next 'empty' unless File.exist?(path)
+
+      contents = File.read(path)
+      next 'empty' if contents.strip.empty?
+
+      JSON.parse(contents)
+    rescue JSON::ParserError
+      'empty'
     end
   end
 
@@ -26,7 +33,7 @@ class Menu
           revealed_word: slot['revealed_word'],
           lives: slot['lives'],
           incorrect_guesses: slot['incorrect_guesses'],
-          slots: @save_slots.map { |slot| slot == 'empty' ? 'empty' : 'full' }
+          loaded_from_slot: choice.to_i
         }
 
         setup_game(state)
@@ -40,10 +47,6 @@ class Menu
   private
 
   def setup_game(state = {})
-    state == {} ? Game.new.play : Game.new(state).play
-  end
-
-  def simplify_slots
-    @save_slots.map { |slot| slot == 'empty' ? 'empty' : 'full' }
+    Game.new(state.merge(slots: @save_slots)).play
   end
 end

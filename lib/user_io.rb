@@ -6,10 +6,15 @@ module UserIO
   end
 
   def validate_input(reg, input_type)
-    answer = gets.chomp
+    line = gets
+    exit(0) if line.nil?
+
+    answer = line.chomp
     until answer.match?(reg)
       puts "Invalid input: #{input_type}"
-      answer = gets.chomp
+      line = gets
+      exit(0) if line.nil?
+      answer = line.chomp
     end
     answer
   end
@@ -41,9 +46,16 @@ module UserIO
       if answer == 'y'
         clear
         render_menu(save_slots)
-        
         puts 'Enter the slot number of the game you would like to continue:'
-        slot_number = validate_input(/\A[1-3]\z/, 'enter 1, 2, or 3 to choose a slot.')
+        slot_number = loop do
+          n = validate_input(/\A[1-3]\z/, 'enter 1, 2, or 3 to choose a slot.')
+          if save_slots[n.to_i - 1] == 'empty'
+            puts 'That slot is empty. Choose a slot that has a saved game.'
+          else
+            break n
+          end
+        end
+        slot_number
       else 
         answer
       end
@@ -68,7 +80,7 @@ module UserIO
         letter_input = validate_input(/\A[a-z]+\z/i, 'please enter a single letter or whole word.')
         clear
     
-        puts 'Great job! You can also save and exit the game at any time by typing "exit" and pressing "enter".'
+        puts 'Great job! You can also save and exit the game at any time by typing "save" and pressing "enter".'
         puts 'When you\'re ready to start, type "start".'
         start_input = validate_input(/\Astart\z/, 'please enter "start".')
       end
@@ -79,6 +91,13 @@ module UserIO
 
   module GameActions
     include UserIO
+
+    def slot_warning
+      puts 'All slots are full, if you would like to override a slot, type the number of the slot you would like to replace.'
+      puts 'If you would like to exit without saving, type "exit"'
+      puts 'If you would like to continue your current game, type "con"'
+      answer = validate_input(/\A([1-3]|exit|con)\z/, 'Enter 1–3 to replace that slot, "con" to continue without saving, or "exit" to quit.')
+    end
 
     def render_board
       system('clear')
@@ -94,7 +113,9 @@ module UserIO
       print 'Guess a letter or word: ' 
       guess = ''
       loop do
-        guess = gets.chomp
+        line = gets
+        exit(0) if line.nil?
+        guess = line.chomp
         if guess.length == 1 && (incorrect_guesses.include?(guess) || revealed_word.include?(guess))
           puts 'You have already guessed that letter:'
           next
