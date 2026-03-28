@@ -63,7 +63,7 @@ module UserIO
 
     def instructions
       clear
-      puts 'Welcome to Hangman!' # make fancier 
+      puts 'Welcome to Hangman!'
       puts BREAK
       puts 'Would you like a brief tutorial? (y/n)'
 
@@ -77,12 +77,12 @@ module UserIO
         puts 'You can either guess a single letter, or the whole word if you think you know it,'
         puts 'But remember, if you guess a whole word incorrectly, you don\'t gain any information about the word.'
         puts 'Type a letter or whole word and press "enter" to try it out:'
-        letter_input = validate_input(/\A[a-z]+\z/i, 'please enter a single letter or whole word.')
+        validate_input(/\A[a-z]+\z/i, 'please enter a single letter or whole word.')
         clear
-    
+
         puts 'Great job! You can also save and exit the game at any time by typing "save" and pressing "enter".'
         puts 'When you\'re ready to start, type "start".'
-        start_input = validate_input(/\Astart\z/, 'please enter "start".')
+        validate_input(/\Astart\z/, 'please enter "start".')
       end
       system('clear')
     end
@@ -110,20 +110,22 @@ module UserIO
     end
   
     def input_guess
-      print 'Guess a letter or word: ' 
+      print 'Guess a letter or word: '
       guess = ''
       loop do
         line = gets
         exit(0) if line.nil?
         guess = line.chomp
-        if guess.length == 1 && (incorrect_guesses.include?(guess) || revealed_word.include?(guess))
+        g = guess.downcase
+        if g != 'save' && guess.match?(/\A[a-z]+\z/i) && guess.length == 1 &&
+           (incorrect_guesses.include?(g) || revealed_word.include?(g))
           puts 'You have already guessed that letter:'
           next
         end
         break if guess.match?(/\A[a-z]+\z/i)
         puts 'Invalid input: please enter a single letter or whole word.'
       end
-      guess
+      guess.downcase
     end
   end
 end

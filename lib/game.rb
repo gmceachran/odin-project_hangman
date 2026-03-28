@@ -1,4 +1,5 @@
 require 'json'
+require 'fileutils'
 require_relative 'user_io'
 
 class Game
@@ -6,20 +7,26 @@ class Game
   attr_reader :secret_word, :lives, :incorrect_guesses, :save_slots
 
   def initialize(state = {})
-    @secret_word = state[:secret_word] || File.readlines(File.join(__dir__, '..', 'data', 'google-10000-english-no-swears.txt'))
-                                          .map { |s| s.chomp }
-                                          .select { |s| s.length >= 5 && s
-                                          .length <= 12 }
-                                          .sample
-    @revealed_word = state[:revealed_word] || secret_arr.map { '_' }
+    @secret_word = if state[:secret_word]
+                     state[:secret_word].downcase
+                   else
+                     File.readlines(File.join(__dir__, '..', 'data', 'google-10000-english-no-swears.txt'))
+                         .map(&:chomp)
+                         .select { |s| s.length >= 5 && s.length <= 12 }
+                         .sample
+                   end
+    @revealed_word = if state[:revealed_word]
+                       state[:revealed_word].map { |c| c == '_' ? '_' : c.to_s.downcase }
+                     else
+                       secret_arr.map { '_' }
+                     end
     @lives = state[:lives] || 6
-    @incorrect_guesses = state[:incorrect_guesses] || []
+    @incorrect_guesses = (state[:incorrect_guesses] || []).map { |g| g.to_s.downcase }
     @save_slots = state[:slots] || Array.new(3, 'empty')
     @loaded_from_slot = state[:loaded_from_slot]
   end
 
   def play
-    # instructions
     until @lives == 0 || revealed_word == @secret_word
       player_turn
     end
@@ -33,10 +40,11 @@ class Game
   end
 
   def evaluate(guess)
+    guess = guess.downcase
     if guess.length > 1
       if guess == @secret_word
         puts "#{guess} is correct!"
-        @revealed_word = guess.split('')
+        @revealed_word = @secret_word.chars
         return
       else
         puts "#{guess} is incorrect."
@@ -48,7 +56,7 @@ class Game
     if secret_arr.include?(guess)
       puts "#{guess} is correct!"
       secret_arr.each_with_index do |letter, idx|
-        @revealed_word[idx] = guess if letter == guess 
+        @revealed_word[idx] = guess if letter == guess
       end
     else
       puts "#{guess} is incorrect."
@@ -72,9 +80,9 @@ class Game
   def player_turn
     render_board
     guess = input_guess
-    if guess == 'save'
+    if guess.casecmp('save').zero?
       save_game
-    else 
+    else
       evaluate(guess)
     end
   end
@@ -83,13 +91,18 @@ class Game
     @secret_word.split('')
   end
 
+  def saves_dir
+    File.join(__dir__, '..', 'saves')
+  end
+
   def clear_loaded_save_if_any
     return unless @loaded_from_slot
 
-    path = File.join(__dir__, '..', 'saves', "save_#{@loaded_from_slot}.json")
+    FileUtils.mkdir_p(saves_dir)
+    path = File.join(saves_dir, "save_#{@loaded_from_slot}.json")
     File.write(path, '')
   end
-  
+
   def save_and_exit(slot_number)
     game_state = {
       "secret_word": @secret_word,
@@ -98,7 +111,8 @@ class Game
       "lives": @lives
     }
 
-    File.write(File.join(__dir__, '..', 'saves', "save_#{slot_number}.json"), JSON.generate(game_state))
+    FileUtils.mkdir_p(saves_dir)
+    File.write(File.join(saves_dir, "save_#{slot_number}.json"), JSON.generate(game_state))
     exit
   end
 
@@ -109,7 +123,6 @@ class Game
         slot_number = idx + 1
         throw :empty_slot if slot == 'empty'
       end
-      # call function to that overrides save slot with a warning
       clear
       render_menu(@save_slots)
       slot_number = slot_warning

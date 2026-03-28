@@ -1,6 +1,1 @@
-{
-  "secret_word": "habits",
-  "revealed_word": ["h", "_", "_", "_", "_", "s"],
-  "incorrect_guesses": ["e", "o", "l"],
-  "lives": 3
-}
+{"secret_word":"haven","revealed_word":["_","a","_","e","_"],"incorrect_guesses":["i"],"lives":5}

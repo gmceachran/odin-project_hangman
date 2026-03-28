@@ -1,6 +1,0 @@
-{
-  "secret_word": "programming",
-  "revealed_word": ["_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"],
-  "incorrect_guesses": [],
-  "lives": 6
-}

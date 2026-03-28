@@ -22,7 +22,7 @@ class Menu
   def start_game
     if @save_slots.any? { |slot| slot != 'empty' }
       choice = choose_game(@save_slots)
-      
+
       if choice == 'n'
         setup_game
       else
@@ -42,7 +42,7 @@ class Menu
       instructions
       setup_game()
     end
-  end 
+  end
 
   private
 
